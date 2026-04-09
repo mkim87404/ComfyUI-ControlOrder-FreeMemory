@@ -22,12 +22,12 @@ class ControlOrderFreeMemory:
             "required": {
                 "free_memory": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "Unload all models and release as much VRAM & RAM as possible while routing & preserving all 'persist_any' passthrough data. Any models passed into 'persist_any' will stay loaded. Prints how much VRAM & RAM has been freed on the ComfyUI session terminal.",
+                    "tooltip": "Unload all models and release as much VRAM & RAM as possible while routing & preserving all 'persist_any' passthrough data. Any models passed into 'persist_any' will stay loaded if they were not already unloaded by the sender nodes (e.g. CLIP / some GGUF loaders). Prints how much VRAM & RAM has been freed on the ComfyUI session terminal.",
                 }),
             },
             "optional": {
                 "persist_any_1": (anyType, {
-                    "tooltip": "Persist any type of data through to the next node e.g. models, latents, conditioning, images, masks, etc. This data survives the 'free_memory' operation. I/O slots expand adaptively",
+                    "tooltip": "Persist any type of data through to the next node e.g. latents, conditioning, images, masks, models (except CLIP / some GGUF models already unloaded by the sender nodes), etc. This data survives the 'free_memory' operation. I/O slots expand adaptively",
                 }),
             }
         }
@@ -39,14 +39,14 @@ class ControlOrderFreeMemory:
     OUTPUT_NODE = True  # Let this be a hybrid node that can both be in the middle or at the end of a workflow (with no outputs connected).
     RETURN_TYPES = MatryoshkaTuple((anyType, )) # Let this node's output slot cardinality grow dynamically from JS hooks, while ComfyUI type validation check believes this is just a tuple of 1 "AnyType" element.
     RETURN_NAMES = MatryoshkaTuple(("persist_any_1", )) # Same trick
-    OUTPUT_TOOLTIPS = MatryoshkaTuple(("Persist any type of data through to the next node e.g. models, latents, conditioning, images, masks, etc. This data survives the 'free_memory' operation. I/O slots expand adaptively", ))
+    OUTPUT_TOOLTIPS = MatryoshkaTuple(("Persist any type of data through to the next node e.g. latents, conditioning, images, masks, models (except CLIP / some GGUF models already unloaded by the sender nodes), etc. This data survives the 'free_memory' operation. I/O slots expand adaptively", ))
     FUNCTION = "passthrough"
     CATEGORY = "Control Order & Free Memory"
     DESCRIPTION = """Control the execution order of nodes by routing any data (as many as you need - I/O slots expand adaptively) through this node. Ensures all input-connected nodes finish executing first before the output-connected nodes start executing.
 
 All input & output slots are AnyType (*). They can hook onto any node, including loader-type nodes like "Load Model", "Load VAE", "Load CLIP", etc. For connecting into loader-type nodes, you can use the "📁 Filename Selector" helper node (already installed with this custom node) to select & feed the filename into the input "persist_any_N" slot that corresponds to the output "persist_any_N" slot that is connecting into the loader-type node.
 
-Optionally unload all models and release as much VRAM & RAM as possible while routing & preserving all 'persist_any' passthrough data. Any models passed into 'persist_any' will stay loaded. This node will also print how much VRAM & RAM has been freed on the ComfyUI session terminal.
+Optionally unload all models and release as much VRAM & RAM as possible while routing & preserving all 'persist_any' passthrough data. Any models passed into 'persist_any' will stay loaded if they were not already unloaded by the sender nodes (e.g. Load CLIP / some GGUF loaders, etc.) This node will also print how much VRAM & RAM has been freed on the ComfyUI session terminal.
 """
 
     def passthrough(self, **kwargs):
@@ -85,7 +85,7 @@ Optionally unload all models and release as much VRAM & RAM as possible while ro
                 # Take snapshot of RAM before cleanup
                 initial_ram = psutil.virtual_memory().used   # This is fully cross-platform & included in all ComfyUI installations.
 
-                # If any of the inputs were models, keep them loaded
+                # If any of the inputs were models (and were not already unloaded by the sender nodes, e.g. CLIP / some GGUF loaders), keep them loaded
                 loaded_models = model_management.loaded_models()    # returns a list of the actual model objects currently tracked by ComfyUI in current_loaded_models
                 keep_loaded = []
                 for key in input_keys:
