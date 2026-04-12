@@ -22,7 +22,7 @@ class ControlOrderFreeMemory:
             "required": {
                 "free_memory": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "Unload all models and release as much VRAM & RAM as possible while routing & preserving all 'persist_any' passthrough data. Any models passed into 'persist_any' will stay loaded if they were not already unloaded by the sender nodes (e.g. CLIP / some GGUF loaders). Prints how much VRAM & RAM has been freed on the ComfyUI session terminal.",
+                    "tooltip": "Unload all models and release as much VRAM & RAM as possible while routing & preserving all 'persist_any' passthrough data. Any models passed into 'persist_any' will stay loaded if they were not already unloaded by the sender nodes (e.g. CLIP / some GGUF loaders). If any routed model fails to persist, fallback to using it immediately after load and reload only when needed. Prints how much VRAM & RAM has been freed on the ComfyUI session terminal.",
                 }),
             },
             "optional": {
@@ -46,7 +46,7 @@ class ControlOrderFreeMemory:
 
 All input & output slots are AnyType (*). They can hook onto any node, including loader-type nodes like "Load Model", "Load VAE", "Load CLIP", etc. For connecting into loader-type nodes, you can use the "📁 Filename Selector" helper node (already installed with this custom node) to select & feed the filename into the input "persist_any_N" slot that corresponds to the output "persist_any_N" slot that is connecting into the loader-type node.
 
-Optionally unload all models and release as much VRAM & RAM as possible while routing & preserving all 'persist_any' passthrough data. Any models passed into 'persist_any' will stay loaded if they were not already unloaded by the sender nodes (e.g. Load CLIP / some GGUF loaders, etc.) This node will also print how much VRAM & RAM has been freed on the ComfyUI session terminal.
+Optionally unload all models and release as much VRAM & RAM as possible while routing & preserving all 'persist_any' passthrough data. Any models passed into 'persist_any' will stay loaded if they were not already unloaded by the sender nodes (e.g. Load CLIP / some GGUF loaders, etc.). If any routed model fails to persist, fallback to using it immediately after load and reload only when needed. This node will also print how much VRAM & RAM has been freed on the ComfyUI session terminal.
 """
 
     def passthrough(self, **kwargs):
